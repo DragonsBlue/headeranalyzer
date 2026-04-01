@@ -381,16 +381,20 @@ async function analyze() {
 }
 
 function getHeaders(item) {
-  return new Promise((resolve, reject) => {
-    if (item.getAllInternetHeadersAsync) {
-      item.getAllInternetHeadersAsync(function(result) {
-        if (result.status === Office.AsyncResultStatus.Succeeded) {
-          resolve(result.value || '');
-        } else {
-          resolve(''); // fallback gracefully
-        }
-      });
-    } else {
+  return new Promise((resolve) => {
+    try {
+      if (item.getAllInternetHeadersAsync) {
+        item.getAllInternetHeadersAsync(function(result) {
+          if (result && result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve(result.value || '');
+          } else {
+            resolve('');
+          }
+        });
+      } else {
+        resolve('');
+      }
+    } catch(e) {
       resolve('');
     }
   });
@@ -398,14 +402,20 @@ function getHeaders(item) {
 
 function parseHeaders(raw) {
   const get = (pattern) => {
-    const m = raw.match(pattern);
-    return m ? m[1].trim() : null;
+    try {
+      const m = raw.match(pattern);
+      return m && m[1] ? m[1].trim() : null;
+    } catch(e) { return null; }
   };
   const getAll = (pattern) => {
     const results = [];
-    let m;
-    const re = new RegExp(pattern, 'gi');
-    while ((m = re.exec(raw)) !== null) results.push(m[1].trim());
+    try {
+      let m;
+      const re = new RegExp(pattern, 'gi');
+      while ((m = re.exec(raw)) !== null) {
+        if (m[1]) results.push(m[1].trim());
+      }
+    } catch(e) {}
     return results;
   };
 
